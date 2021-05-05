@@ -26,8 +26,8 @@ def getOneItemSet(transListSet):
 def fillItemCountDict(itemSet, transListSet):
     localSet_ = defaultdict(int)
     for item in itemSet:
-        localSet_[item] += sum([1 for trans in transListSet if item.issubset(trans)])
-        # print(item)
+        l = [x for x in item]
+        localSet_[str(l)] += sum([1 for trans in transListSet if item.issubset(trans)])
     return localSet_
 
 
@@ -62,7 +62,7 @@ def checkConfidence(itemCountDict, minConf, tranlen):
                rules[key] = conf
     return rules
 
-def getCombinations(freqSe):
+def getCombinations(freqSe,itemCountDict):
     perm=[]
     dict_rules=dict()
     li=[]
@@ -75,15 +75,24 @@ def getCombinations(freqSe):
            for j in range(len(li)-1):
                k = [x for index, x in enumerate(temp_i) if index <= j]
                m = [x for x in li if x not in k]
-               print(str(k)+"->"+str(m))
+               b1=getSupport(itemCountDict[str(k)], 21)
+               b2=getSupport(itemCountDict[str(temp_i)], 21)
+               b3=getSupport(itemCountDict[str(m)], 21)
+               # confidence=b1/b2
+               # lift= b2/b1*b3
+               if(b2!=0):
+                 if(b1/b2>0.2):
+                   print(str(k)+"->"+str(m)+" : " +str(b1/b2))
 if __name__ == '__main__':
     freqSet = dict()
     itemCountDict = defaultdict(int)
+    dicta=defaultdict(int)
     transLength = len(getTransListSet())
     itemSet = getOneItemSet(getTransListSet())
     itemCountDict = fillItemCountDict(itemSet, getTransListSet())
     freqOneTermSet = getItemsWithMinSupp(getTransListSet(), itemSet, 0.005)
     k = 1
+    dicta.update(itemCountDict)
     currFreqTermSet = dict()
     l=[]
     currFreqTermSet = freqOneTermSet
@@ -94,13 +103,15 @@ if __name__ == '__main__':
         currCandiItemSet = getJoinedItemSet(currFreqTermSet, k)
         currFreqTermSet = getItemsWithMinSupp(getTransListSet(), currCandiItemSet, 0.005)
         itemCountDict = fillItemCountDict(currFreqTermSet, getTransListSet())
-        # print(itemCountDict.items())
+        # print(itemCountDict)
         # print("frequent item sets")
         # print()
+        dicta.update(itemCountDict)
         l.append([list(x) for x in currFreqTermSet])
 
         # print("confidence with rules")
         # print(checkConfidence(itemCountDict, 0.2, transLength))
 # confidence- lift
+#     print(dicta.keys())
     for i in l:
-       print(getCombinations(i))
+       print(getCombinations(i,dicta))
