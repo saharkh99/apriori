@@ -4,6 +4,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+# analysis of
+
 def getTransListSet(filePath='groceries.csv'):
     # get file.csv
     transListSet = []
@@ -12,6 +15,8 @@ def getTransListSet(filePath='groceries.csv'):
         for line in reader:
             transListSet.append(set(line))
     return transListSet
+
+
 if __name__ == '__main__':
 
     df = getTransListSet()
@@ -31,8 +36,8 @@ if __name__ == '__main__':
     l=df.sort_values(ascending=0, by='count')[-10:]
     print(l)
     print("mean: "+str(df['count'].mean()))
-    plt.stem(df['product'].apply(lambda x: list(x)[0]).astype("unicode"),df['count'].sort_values())
-    # df1=df.sort_values(ascending=0,by='count')[:10].plot.bar(x='product', y='count', rot=0, align='edge', width=0.4,fontsize=5)
+    # plt.stem(df['product'].apply(lambda x: list(x)[0]).astype("unicode"),df['count'].sort_values())
+    df1=df.sort_values(ascending=0,by='count')[:10].plot.bar(x='product', y='count', rot=0, align='edge', width=0.4,fontsize=5)
     # df.boxplot('count')
     plt.interactive(False)
     plt.figure(figsize=(50, 3))

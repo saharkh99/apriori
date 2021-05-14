@@ -1,6 +1,8 @@
 import csv
 import itertools
 from collections import defaultdict
+from matplotlib import pyplot as plot
+import statistics
 
 
 def getOneItemSet(transListSet):
@@ -8,7 +10,7 @@ def getOneItemSet(transListSet):
     itemSet = set()
     for line in transListSet:
         for item in line:
-            if str(item):
+            if len(str(item)) != 0:
                 itemSet.add(frozenset([item]))
     return itemSet
 
@@ -18,7 +20,9 @@ def fillItemCountDict(itemSet, transListSet):
     localSetForCounts = defaultdict(int)
     for item in itemSet:
         l = [x for x in item]
-        localSetForCounts[str(l)] += sum([1 for trans in transListSet if item.issubset(trans)])
+        perm = itertools.permutations(l)
+        for i in perm:
+            localSetForCounts[str(list(i))] += sum([1 for trans in transListSet if item.issubset(trans)])
     return localSetForCounts
 
 
@@ -47,6 +51,7 @@ def getItemsWithMinSupp(transListSet, itemSet, minSupp):
 
 def getRules(freqSe, itemCountDict, min_confidence, lentrans):
     # make rules(k->m) from frequent itemSets with this pattern:temp_i{k,m}
+    # {k,m}
     rules = []
     lifts = []
     lift = 1
@@ -58,28 +63,29 @@ def getRules(freqSe, itemCountDict, min_confidence, lentrans):
             for j in range(len(li) - 1):
                 k = [x for index, x in enumerate(temp_i) if index <= j]
                 m = [x for x in li if x not in k]
-                b1 = getSupport(itemCountDict[str(k)], lentrans)
-                b2 = getSupport(itemCountDict[str(temp_i)], lentrans)
-                b3 = getSupport(itemCountDict[str(m)], lentrans)
-                if (b3 * b1 != 0):
-                    lift = b2 / b1 * b3
-                if (b1 != 0):
-                    confidence = b2 / b1
+                support_k = getSupport(itemCountDict[str(k)], lentrans)
+                support_total = getSupport(itemCountDict[str(temp_i)], lentrans)
+                support_m = getSupport(itemCountDict[str(m)], lentrans)
+                if (support_k != 0):
+                    confidence = support_total / support_k
+                    if (support_m != 0):
+                        lift = confidence / support_m
                     if (confidence >= min_confidence):
-                        elm = str(k) + "->" + str(m) + " , " + str(confidence)
+                        elm = str(k) + "->" + str(m) + " , " + str(lift)
                         if (elm != None):
                             lifts.append(lift)
                             rules.append(elm)
     dicta = dict(zip(rules, lifts))
-    [print(key) for (key, value) in sorted(dicta.items(), key=lambda x: x[1], reverse=True)]
+    return dicta
+    # [print(key) for (key, value) in sorted(dicta.items(), key=lambda x: x[1], reverse=True)]
 
 
 def getTransListSet(filePath='groceries.csv'):
     # get file.csv
     transListSet = []
     with open(filePath, 'r') as file:
-        reader = csv.reader(file, delimiter=',')
-        for line in reader:
+        readerCSV = csv.reader(file, delimiter=',')
+        for line in readerCSV:
             transListSet.append(set(line))
     return transListSet
 
@@ -101,6 +107,7 @@ class Arules:
         currFreqTermSet = dict()
         currFreqTermSet = freqOneTermSet
         self.l.append([list(x) for x in currFreqTermSet])
+        # increase the number of k for joining k items until  there is no item in set
         while currFreqTermSet != set():
             freqSet[k] = currFreqTermSet
             k += 1
@@ -112,8 +119,14 @@ class Arules:
                 self.l.append([list(x) for x in currFreqTermSet])
         return self.l
 
-    def get_arules(self, min_support=0.005, min_confidence=0.2, min_lift=None, sort_by='lift'):
+    def get_arules(self, min_support=0.3, min_confidence=0.2, min_lift=None, sort_by='lift'):
         self.get_frequent_item_sets()
+        dicta1 = dict()
         for i in self.l:
             if (i != None):
-                getRules(i, self.dicta, min_confidence, len(getTransListSet()))
+                dicta1.update(getRules(i, self.dicta, min_confidence, len(getTransListSet())))
+        pre_value = 0
+        for (key, value) in sorted(dicta1.items(), key=lambda x: x[1], reverse=True):
+            if (pre_value != value):
+                [print(key)]
+                pre_value = value
